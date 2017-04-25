@@ -1,0 +1,67 @@
+---
+title: "Connecting points in Normal Probability Plot"
+output: 
+html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+<div id="Overview">
+We're going to connect all the points in a normal probability plot with lines. There will actually be one normal probability plot for each level of a categorical variable. **The dataset used is the <em>nc</em> dataset from Duke's Coursera's statsr package**
+</div>
+
+## Load packages
+```{r}
+library(dplyr)
+library(magrittr)
+library(statsr)
+```
+
+## Load data
+```{r}
+data(nc)
+```
+
+Here's a regular normal probability plot of the ***weight*** variable on nonmissing levels of the ***habit*** variable. By "regular" I mean that we're not connecting the points with lines. 
+
+```{r using-points}
+ncSmokers<-nc%>%filter(habit=="smoker")
+ncNonsmokers<-nc%>%filter(habit=="nonsmoker")
+
+par(mfrow=c(1,2))
+
+qqnorm(ncSmokers$weight,main="NPP plot of weights of smokers\n in nc dataset")
+qqline(ncSmokers$weight)
+
+qqnorm(ncNonsmokers$weight,main="NPP plot of weights of\n nonsmokers in nc dataset")
+qqline(ncNonsmokers$weight)
+```
+
+Now here's a normal probability plot of the ***weight*** variable on nonmissing levels of the habit variable wherein datapoints are connected by lines. What seems wrong with it?
+
+```{r using-lines-wrong}
+par(mfrow=c(1,2))
+
+qqnorm(ncSmokers$weight,main="NPP plot of weights of smokers\n in nc dataset",type="l")
+qqline(ncSmokers$weight)
+
+qqnorm(ncNonsmokers$weight,main="NPP plot of weights of\n nonsmokers in nc dataset",type="l")
+qqline(ncNonsmokers$weight)
+```
+
+**The plot doesn't <em>seem</em> to reflect the data. Here's what's going on. The lines connect points in the order that they appear in the dataset- i.e. the point is not necessarily going to be connected to its lexicographic successor- this is necessary for the plot to look as you want it. To make this so, we'll sort each subsample by weight before plotting it. **
+
+```{r using-line-correct}
+par(mfrow=c(1,2))
+
+ncSmokers<-arrange(ncSmokers,weight)
+qqnorm(ncSmokers$weight,main="NPP plot of weights of smokers\n in nc dataset",type="l")
+qqline(ncSmokers$weight)
+
+ncNonsmokers<-arrange(ncNonsmokers,weight)
+qqnorm(ncNonsmokers$weight,main="NPP plot of weights of\n nonsmokers in nc dataset",type="l")
+qqline(ncNonsmokers$weight)
+```
+
+**Ah- much better!**
