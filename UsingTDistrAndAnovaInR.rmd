@@ -1,0 +1,319 @@
+---
+title: "Exercises pertaining to inference for means and differences between means in R"
+output: 
+html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+---
+
+##TODO:
+* Horizontal line through each Quartile 1 and Quartile 5 on side-by-side boxplot.
+
+## t-tests (mostly) and z-tests (for min sample size problem)
+
+
+**Exercise 5.1:** Identify the critical t. An independent random sample is selected from an approximately
+normal population with unknown standard deviation. Find the degrees of freedom and the critical
+t-value (t*) for the given sample size and confidence level.
+
+**(a)** n = 6, CL = 90%
+
+```{r}
+library(magrittr)
+CL<-.90
+n<-6
+qt(p=(1-CL)/2,df=n-1,lower.tail=F)%>%round(2)
+```
+
+**(b)** n = 21, CL = 98%
+
+```{r}
+CL<-0.98
+n<-21
+qt(p=(1-CL)/2,df=n-1,lower.tail=F)%>%round(2)
+```
+
+**(c)** n = 29, CL = 95%
+
+```{r}
+CL<-0.95
+n<-29
+qt(p=(1-CL)/2,df=n-1,lower.tail=F)%>%round(2)
+```
+
+**(d)** n = 12, CL = 99%
+
+```{r}
+CL<-0.99
+n<-12
+qt(p=(1-CL)/2,df=n-1,lower.tail=F)%>%round(2)
+```
+
+**Exercise 5.3** Find the p-value, Part I. An independent random sample is selected from an approximately normal population with an unknown standard deviation. Find the p-value for the given set of hypotheses and T test statistic. Also determine if the null hypothesis would be rejected at
+alpha = 0.05.
+
+**(a)** HA : µ > µ0 , n = 11, T = 1.91
+
+```{r}
+pVal<-pt(q=1.91,df=10,lower.tail=F)
+cat("P value: ",pVal,"\n",sep="")
+alpha=0.05
+cat("Reject? ",ifelse(pVal<alpha,"Yes","No"),"\n",sep="")
+```
+
+**(b)** HA : µ < µ0 , n = 17, T = -3.45
+
+```{r}
+pVal<-pt(-3.45,df=16,lower.tail=T)
+cat("P value: ",pVal,"\n",sep="")
+alpha=0.05
+cat("Reject? ",ifelse(pVal<alpha,"Yes","No"),"\n",sep="")
+```
+
+**(c)** HA : µ $\neq$ µ0 , n = 7, T = 0.83
+
+```{r}
+pVal<-2*pt(0.83,df=6,lower.tail=F)
+cat("P value: ",pVal,"\n",sep="")
+alpha=0.05
+cat("Reject? ",ifelse(pVal<alpha,"Yes","No"),"\n",sep="")
+```
+
+**Exercise 5.5** Working backwards, Part I. A 95% confidence interval for a population mean, µ, is
+given as (18.985, 21.015). This confidence interval is based on a simple random sample of 36
+observations. Calculate the sample mean and standard deviation. Assume that all conditions
+necessary for inference are satisfied. Use the t-distribution in any calculations.
+
+```{r}
+interval<-c(18.985,21.015)
+confLvl<-0.95
+n<-36
+tCrit<-qt(p=(1-confLvl)/2,df=n-1,lower.tail=F)
+estimate<-(interval[1]+interval[2])/2
+ME<-(interval[2]-interval[1])/2
+SErr<-ME/tCrit
+sample_std<-(SErr*sqrt(n))%>%round(2)
+sample_std
+```
+
+**Exercise 5.13** Car insurance savings. A market researcher wants to evaluate car insurance savings at a
+competing company. Based on past studies he is assuming that the standard deviation of savings
+is $100. He wants to collect data such that he can get a margin of error of no more than $10 at a
+95% confidence level. How large of a sample should he collect?
+
+```{r}
+confLvl<-0.95
+zCrit<-qnorm((1-confLvl)/2,lower.tail=F)
+zCrit%>%round(2)
+s<-100
+meBd<-10
+nMin<-ceiling(zCrit^2*(s^2/meBd^2))
+nMin
+```
+
+**Exercise 5.19** Global warming, Part I. Is there strong evidence of global warming? Let's consider a
+small scale example, comparing how temperatures have changed in the US from 1968 to 2008.
+The daily high temperature reading on January 1 was collected in 1968 and 2008 for 51 randomly
+selected locations in the continental US. Then the difference between the two readings (temperature
+in 2008 - temperature in 1968) was calculated for each of the 51 different locations. The average
+of these 51 values was 1.1 degrees with a standard deviation of 4.9 degrees. We are interested in
+determining whether these data provide strong evidence of temperature warming in the continental
+US.
+
+**Remarks:** Assume conditions for inference satisfied and perform paired t-test on difference btwn means w/ null hypothesis of 0 and and single-sided alternative.
+
+
+```{r}
+est<-1.1
+s<-4.9
+n<-51
+sErr<-s/sqrt(n)
+mu_0<-0
+tScore<-(est - mu_0)/sErr
+alpha=0.05
+
+PVal<-pt(tScore,df=n-1,lower.tail=F)
+PVal
+
+reject<-ifelse(PVal<alpha,"Yes","No")
+
+reject
+
+cat("Conclusion:","We ",ifelse(reject=="No","fail to ",""),"reject the hypothesis that there was no significant difference btwn mean temperatures in 1968 and 2008 in the continental United States at the ",alpha," significance level.",sep="")
+```
+
+**Exercise 5.21** Global warming, Part II. We considered the differences between the temperature readings in January 1 of 1968 and 2008 at 51 locations in the continental US in Exercise 5.19. The
+mean and standard deviation of the reported differences are 1.1 degrees and 4.9 degrees.
+
+**(a)** Calculate a 90% confidence interval for the average difference between the temperature measures between 1968 and 2008.
+
+**(b)** Interpret this interval in context.
+
+**(c)** Does the confidence interval provide convincing evidence that the temperature was higher in
+2008 than in 1968 in the continental US? Explain.
+
+```{r}
+estimate<-1.1
+s<-4.9
+confLvl<-0.9
+n<-51
+tCrit<-qt((1-confLvl)/2,df=n-1,lower.tail=F)
+sErr<-s/sqrt(n)
+lBound<-estimate-tCrit*sErr
+uBound<-estimate+tCrit*sErr
+interval<-c(lBound,uBound)
+interval
+cat("We are ",100*confLvl," confident that for the contiguous United States the mean temperature in 2008 was between ",round(interval[1],2)," degrees ",ifelse(interval[1]<0,"cooler","warmer")," and ",round(interval[2],2)," degrees ",ifelse(interval[2]<0,"cooler","warmer")," than the mean temperature in the 1968.",sep="")
+
+```
+
+
+**Exericse 5.23** Gifted children. Researchers collected a simple random sample of 36 children who
+been identified as gifted in a large city. The following histograms show the distributions of the
+scores of mothers and fathers of these children. Also provided are some sample statistics.
+
+Reproducing Table of Sample Statistics (unfortunately n is coerced to a floating point value)
+
+```{r}
+mother<-c(118.2,6.5,36L)
+father<-c(114.8,3.5,36L)
+diff<-c(3.4,7.5,36L)
+
+rowNames<-c("mean","SD","n")
+theTable<-data.frame(mother,father,diff)
+row.names(theTable)<-rowNames
+library(knitr)
+kable(theTable)
+```
+
+Hypothesis Test to see if IQ scores of Mothers and Fathers of gifted children are equal.
+
+```{r}
+mu0<-0
+n<-diff[3]%>%as.integer
+s<-diff[2]
+sErr<-s/sqrt(n)
+t<-(diff[1]-mu0)/sErr
+below<-t<0
+
+pVal<-2*pt(t,df=n-1,lower.tail=below)
+pVal%>%round(2)
+
+alpha=0.05
+
+reject<-pVal<alpha
+cat("Since pval is ",ifelse(reject,"less than","greater than or equal to")," alpha, we ",ifelse(reject,"","fail to "),"reject the null hypothesis at the ",alpha," significance level.","\n","\n",sep="")
+
+cat("There is ",ifelse(reject,"sufficient","insufficient")," evidence to conclude that there is a statistically significant difference between the mean IQs of mothers and fathers of gifted children.",sep="")
+
+```
+
+**Exercise 5.31**
+
+Reproduce relevant data
+
+```{r}
+rowNames<-c("linseed","horsebean")
+means<-c(218.75,160.20)
+sds<-c(52.24,38.63)
+smpl_sizes<-c(12,10)
+chickWts<-data.frame(means,sds,smpl_sizes)
+row.names(chickWts)<-rowNames
+kable(chickWts)
+
+```
+
+Do independent samples hypothesis test for difference btwn means w/ 2-sided alternative hyp.
+
+```{r}
+sErr<-sqrt(sds[1]^2/smpl_sizes[1]+sds[2]^2/smpl_sizes[2])
+sErr
+
+mu0<-0
+df<-min(smpl_sizes)
+est<-means[1]-means[2]
+tScore<-(est-mu0)/sErr
+tScore%>%round(2)
+below<-tScore<0
+pVal<-2*pt(tScore,df=df,lower.tail=below)
+pVal%>%round(2)
+cat("Since pVal is ",ifelse(reject,"less than","greater than or equal to")," alpha, we ",ifelse(reject,"","fail to "),"reject the null hypothesis at the ",alpha," significance level.","\n","\n",sep="")
+
+cat("There is ",ifelse(reject,"sufficient","insufficient")," evidence to conclude that there is a statistically significant difference between the mean weight gains of chickens fed linseed and those fed horsebean",sep="")
+```
+
+## Single Factor(one-way) ANOVA
+
+We're going to be using the chickwts dataset in the datasets package. We'd like to test the hypothesis that the mean weights of newly hatched chickens after 6 weeks in each diet group are all the same.
+
+The 3 conditions that must be satisfied in order to go through with the inference procedure are:
+
+* Independence(both within each sampled group and between grps): This can be assumed since the chickens were randomly assigned to any one of the 6 diets.
+* Normality of each group's population: will be checked below using sample as proxy for population
+* Equality of variances of each group: will be checked below using sample as proxy for population
+
+
+As a first step, we'll look at a side by side box plot of the weights by feed.
+```{r}
+
+meanWts<-with(chickwts,tapply(weight,feed,mean))
+
+boxplot(chickwts$weight~chickwts$feed)
+points(1:6,meanWts,pch=4,cex=1.5)
+```
+
+From the side-by-side boxplots, we can glean that only the sunflower group has outliers. Also, there is some skew for the casein,horsebeen and meatmeal groups, but it's not horrible.
+
+The IQRs of each group are clearly different.
+
+```{r}
+with(chickwts,tapply(weight,feed,IQR))%>%sort
+```
+
+They range from a low of 27.50 for sunflower to a high of 93.50 for casein. So this is indication that the constant variance assumption may be inappropriate. Let's compare the standard deviations.
+
+```{r}
+with(chickwts,tapply(weight,feed,sd))%>%round(2)%>%sort
+```
+
+So the standard deviations are also obviously different. 
+
+**However, a rule of thumb for the constant variance assumption is that you can assume constant variance if the ratio of the standard deviation of the group with the highest standard deviation to that with the lowest standard deviation is less than 2.**
+
+```{r}
+sds<-with(chickwts,tapply(weight,feed,sd))%>%round(2)%>%sort
+ratio<-sds[length(sds)]/sds[1]
+cat("ratio:",round(ratio,2),"\n",sep="")
+cat("Constant variance assumption is ",ifelse(ratio<2,"","NOT")," met.",sep="")
+
+```
+
+Now, let's check the normality or lack thereof of each group. The above side-by-side box plots reveal little to no skew for most groups and outliers in only one of the groups.
+
+**We could do an normal quantile plot for each of the 6 groups, but this is a bad idea. It requires too many charts. What if we had 100 groups? Would we generate 100 normal quantile plots? No way! Instead we'll create group residuals (that is each observation minus its group mean) and then do a SINGLE normal quantile plot of the residuals**
+
+```{r}
+chickMeans<-with(chickwts,tapply(weight,feed,mean))
+
+chickResids<-chickwts$weight-chickMeans[as.numeric(chickwts$feed)]
+
+##Note as.numeric(chickwts$feed) maps a feed group to its associated underlying integer code...these codes correspond to the indices of the chickMeans vector
+
+qqnorm(chickResids,main="Normal Quantile plot of group residuals for chickwts dataset")
+qqline(chickResids)
+```
+
+So based on the above normal quantile plot, it doesn't seem totally unreasonable to that a normal model is decent for the weights of each of the feed groups. (**Remember: data for all 6 of the feed are captured by the single normal quantile plot above**)
+
+
+Now since, both assumption have been met, we can go ahead an go through with the procedure. We'll be used the aov function from the stats package; its first parameter is the formula (in this case <response variable> ~ <single explanatory variable> since we're doing single factor Analysis of Variance)
+
+```{r}
+anova<-aov(weight~feed,data=chickwts)
+summary(anova)
+```
+
+The obscenely low P-value- (it's $O(10^{-9})$) allows us to confidently reject the hypothesis that weights are all the same across the feed groups.
