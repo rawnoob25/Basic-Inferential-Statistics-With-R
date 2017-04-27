@@ -1,0 +1,99 @@
+---
+title: "Hypothesis Testing and Confidence Intervals for Proportions and for the Difference Between 2 Independent Proportions"
+output:
+  html_document:
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Load packages
+```{r}
+library(ggplot2)
+```
+
+
+## Exercise 18.4 (source "The Book of R"  by Tillman Davies) 
+
+***a. HairEyeColor is a dataset in the datasets package. It's a 4x4x2 array that provides frequencies of hair and eye colors of 592 statistics students, split by sex. Perform a chi-squared test of independence for hair against eye color for all students regardless of sex.***
+
+```{r}
+str(HairEyeColor)
+```
+
+We see that the dataset is an array with Hair as the first dimension, Eye as the second dimension and Sex as the third dimension. If we add the male and female columns (the first and second entries of the third dimension), we'll get the total frequencies for each Hair/Eye pairing.
+
+```{r}
+total<-HairEyeColor[,,1] + HairEyeColor[,,2]
+total
+```
+
+We'll now perform the chi-squared test of independence (implicitly between the Hair and Eye variables of total).
+
+```{r}
+chisq.test(x=total)
+```
+
+Notice that the df (above) is 9. This is the (nrow - 1)x(ncol - 1)=3x3=9.
+
+So the very low p-value indicates that there's sufficient evidence to reject the null hypothesis that Hair Color and Eye Color are independent. (i.e. there's strong evidence to favor the conclusion that these two variables are associated).
+
+To get some intuition for the fact in this sample of subjects, Hair Color and Eye Color were NOT independent, a filled bar plot would be useful. However, the contingency table format (the format of the original data) won't enable us to do this. We'll need to convert to a data frame with categorical variables Hair and Eye- where each row is one student (subject)- but this will take a couple of steps.
+
+```{r}
+DFFreqHairEyeColor<-as.data.frame(total)
+DFFreqHairEyeColor
+```
+You'll notice that this data frame has 16 rows- each observation is actually a (Hair,Eye) pair. There are 16 such unique pairs since both the Hair and Eye variables each have 4 distinct levels. The 3rd column is a frequency variable. 
+
+So the as.data.frame(total) call returned a dataframe with the first 2 columns as the levels of each unique pair and the 3rd as the frequency of occurence of that pair.
+
+We'll now need to convert this to a data frame wherein each student (subject) is a row and the columns are Hair and Eye.
+
+```{r}
+#PRE: frequencies stored in "Freq" variable
+freqDFToRegularDF<-function(freqDF,counts="Freq"){
+  index<-rep.int(1:nrow(freqDF),freqDF[[counts]])
+  freqDF[[counts]]<-NULL
+  return(freqDF[index,])
+}
+
+dfHairEyeColor<-freqDFToRegularDF(DFFreqHairEyeColor)
+```
+The above function creates an index vector with each row number repeated as many times as its frequency value. The column passed in for the counts variable is then dropped. The returned data frame will then contain each Hair-Eye pairing repeated as many times as its frequency indicates.
+
+If everything worked corrected this data frame should have as many rows as the sum of the frequencies in the "DFFreqHairEyeColor" dataframe. Let's check this.
+
+```{r perform check}
+sum(DFFreqHairEyeColor$Freq)
+nrow(dfHairEyeColor)
+```
+
+Now time to make the filled bar plot. We'll have each bar be a hair color and fill by eye color.
+
+```{r make filled bar plot}
+ggplot(dfHairEyeColor,aes(x=Hair,fill=Eye))+geom_bar(position="fill")
+```
+So clearly blonds have a propensity toward blue eyes and people with black hair have a propensity toward brown eyes.
+
+Now let's plot eye color for the bars and have the fill be hair color.
+
+```{r}
+ggplot(dfHairEyeColor,aes(x=Eye,fill=Hair))+geom_bar(position="fill")
+```
+Oddly enough, people with blue eyes don't have as much of a propensity to be blond as blonds do to have bulle eyes. The strongest propensity toward any haircolor group among a particular eyecolor group is the propensity of those with Hazel eyes to having brown hair.
+
+***So the chi-square test of independence tells us that it's very likely that there is a relationship between the two variables, but tell us nothing about the nature of this association. The chi-square test of independence is best when the data is in the form of a matrix of counts.***
+
+***The filled bar plots clue us in to the nature of the relationship, but obviously only at an exploratory level. Before we can make the filled bar plots, we have to convert the 2-way contingency table into a dataframe where the actual subjects (on whom the 2 categorical variables in the contingency table were measured) occupy the rows each of the 2 variables in the contingency table occupy the column. The values of the variable in this data frame are NOT counts however; they're the actual levels of the original 2 categorical variables in the contingency table. The counts are reflected in the number of times a particular (Variable1-Variable2) pairing is repeated in the dataframe.***
+
+
+***b. Using the Duncan dataset in the car package, perform a chi-square goodness of fit test to test whether professional (prof), blue collar (bc) and white collar (wc) occupations are equally represented among the occupations in the dataset. Perform the test once at $\alpha$ = 0.05 and then again at $\alpha$ = 0.01***
+
+```{r}
+library(car)
+profTypeTable<-table(Duncan$type)
+chisq.test(x=profTypeTable) #note by default a test of homogeneity is performed; i.e. the actual data is compared against the distribution wherein each group is equally represented
+```
+
+At $\alpha$ =0.05 we'd reject the hypothesis that occupations are equally distributed among white collar/blue collar/professional, but at $\alpha$ = 0.01 we'd fail to reject this hypothesis.
