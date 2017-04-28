@@ -13,7 +13,7 @@ library(ggplot2)
 ```
 
 
-## Exercise 18.4 (source "The Book of R"  by Tillman Davies) 
+## Exercise 18.4 (source: "The Book of R"  by Tillman Davies) 
 
 ***a. HairEyeColor is a dataset in the datasets package. It's a 4x4x2 array that provides frequencies of hair and eye colors of 592 statistics students, split by sex. Perform a chi-squared test of independence for hair against eye color for all students regardless of sex.***
 

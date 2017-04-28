@@ -1,0 +1,11 @@
+---
+title: "Some one-way ANOVA examples"
+output:
+  html_document:
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Exercise 19.1 (source: "The Book of R"  by Tillman Davies)
+

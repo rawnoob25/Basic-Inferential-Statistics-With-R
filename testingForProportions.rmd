@@ -8,7 +8,7 @@ output:
   pdf_document: default
 ---
 
-## Exercise 18.3 (source "The Book of R"  by Tillman Davies)  
+## Exercise 18.3 (source: "The Book of R"  by Tillman Davies)  
 ***An advertisement for a skin cream claims nine out of ten women who use it would recommend it to a friend. A skeptical salesperson in a department store believes the true proportion of women users who'd recommend it, $\pi$, is much smaller than 0.9. She follows up with 89 random customers who had purchased the skin crea and asks if they would recommend it to others, to which 71 answer yes.***
 
 ***a. Set up an appropriate pair of hypotheses for this test and determine whether it will be valid to carry out using the normal distribution.***

@@ -9,15 +9,19 @@ html_document:
 
 ---
 
-##TODO:
+## Note: Exercises are from OpenIntro Statistics 3rd edition by Diez,Barr, and Centinkaya-Rundel
+
+## TODO:
 * Horizontal line through each Quartile 1 and Quartile 5 on side-by-side boxplot.
+
+* Put cedilla on the "C" in Dr. Cetinkaya-Rundel's last name without messing up other formatting
 
 ## t-tests (mostly) and z-tests (for min sample size problem)
 
 
 **Exercise 5.1:** Identify the critical t. An independent random sample is selected from an approximately
 normal population with unknown standard deviation. Find the degrees of freedom and the critical
-t-value (t*) for the given sample size and confidence level.
+t-value (t*) for the given sample size and confidence level. 
 
 **(a)** n = 6, CL = 90%
 
