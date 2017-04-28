@@ -7,5 +7,95 @@ output:
     theme: spacelab
 ---
 
+## Load packages
+```{r}
+library(magrittr)
+```
 ## Exercise 19.1 (source: "The Book of R"  by Tillman Davies)
 
+***a./b. checks for normality of each group and constant variance across the groups***
+
+Below we'll make a data frame that holds data for the depths of archaeological findings at 5 different sites. The depths are reported in centimeters.
+
+```{r make-data-frame}
+depths<-c(93,120,65,105,115,82,99,87,100,90,78,95,93,88,110,85,45,80,28,75,70,65,55,50,40,100,75,65,40,73,65,50,30,45,50,45,55,96,58,95,90,65,80,85,95,82)
+
+siteNums<-rep(strsplit("Site1 Site2 Site3 Site4"," ")%>%unlist,times=c(15,10,12,9))
+
+df<-data.frame(depth=depths,siteNum=siteNums)
+```
+
+Now let's check for normality of depths at each site and constant variance of depths across sites. We'll assume that depths at a particular site are independent of one another and that the depths at one of the four sites are independent of those at any other of the four sites.
+
+```{r Check normality and constant variance using side by side boxplot }
+boxplot(df$depth~df$siteNum,main="Side by side boxplot of\ndepths by site",ylab="depth (cm)")
+siteMeans<-with(df,tapply(depth,siteNum,FUN=mean))
+points(1:4,siteMeans,pch=4,cex=1.5)
+```
+The side-by-side boxplots indicate that each distribution of depths at a site contains no outliers; only the distribution of depths for Site4 seems very skewed (left-skewed in this case). The IQRs aren't all that far off from one another, so the constant variance across groups (sites in this case) assumption seems reasonable.
+
+Let's check to see that the ratio of the largest group standard deviation to the smallest one is less than 2.
+
+```{r}
+sds<-with(df,tapply(depth,siteNum,FUN=sd))
+max(sds)/min(sds)
+```
+It's well below 2, so we're good on the constant variance assumption.
+
+To examine normality with each group a bit further, we'll look at an NPP plot of the group residuals. (uses siteMeans from above)
+
+```{r}
+grpResids<-df$depth - siteMeans[as.numeric(df$siteNum)]
+qqnorm(grpResids,main="NPP plot of group residuals")
+qqline(grpResids)
+```
+
+So the assumption normality of each group seems quite reasonable.
+
+***c. Single factor ANOVA on depths vs site***
+
+$H_0$ : mean depth of finding is seem across all sites  
+$H_A$ : at least one pair of sites contains differing mean depths
+
+
+```{r}
+test<-aov(depth~siteNum,df)
+summary(test)
+```
+
+So we have a massive F-score and a miniscule P-value ($O(10^{-6})$), so we can comfortably reject the null hypothesis that the mean depth of findings is the same at all archaelogical sites.
+
+***d./e. Using the iris dataset, determine which among sepal width, petal width, sepal length, and petal length would be suitable for one-way ANOVA using Species as the grouping variable. Then perform the one-way ANOVA procedure.***
+
+Let's see if Sepal.Length is suitable for ANOVA w/ Species as grouping variable.
+
+```{r}
+nrow(iris) - nrow(iris[complete.cases(iris),])
+## so no missing values for any variable of iris dataset
+with(iris,boxplot(Sepal.Length~Species,main="Side-by-side boxplot of\n Sepal Length vs Species\n for iris"))
+sepalLengthMeans<-with(iris,tapply(Sepal.Length,Species,FUN=mean))
+sepalLengthMeans
+points(x=seq_along(iris$Species%>%unique),y=sepalLengthMeans,pch=4,cex=1.5)
+
+sepalLengthSDs<-with(iris,tapply(Sepal.Length,Species,FUN=sd))
+
+max(sepalLengthSDs)/min(sepalLengthSDs)
+
+grpResids<-iris$Sepal.Length - sepalLengthMeans[as.numeric(iris$Species)]
+
+qqnorm(grpResids,main="NPP plot of Sepal.Length for iris")
+qqline(grpResids)
+```
+
+So Sepal.Length seems good for ANOVA.
+
+***Anova for Sepal.Length vs Species***
+
+```{r}
+test<-aov(Sepal.Length~Species,data=iris)
+summary(test)
+```
+
+***So it's safe to conclude that mean sepal lengths aren't the same across the species setosa, versicolor and virginica***
+
+***We've found one variable suitable for ANOVA w/ Species, so it's time to move on to something else.***
