@@ -1,0 +1,113 @@
+---
+title: "Examples involving ANOVA on more than one grouping variable and the Kruskal-Wallis test for difference between medians when intra-group normality is violated"
+output:
+  html_document:
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Load packages
+```{r}
+library(magrittr)
+library(MASS)
+library(dplyr)
+```
+
+## Exercise 19.2 (source: "The Book of R"  by Tillman Davies)
+
+### One-way ANOVA vs Kruskal-Wallis
+
+***Note: parts a-c of this exercise use the quakes dataset in the datasets package and cover the decision as to whether single-factor ANOVA or the Kruskal-Wallis test is more appropriate for detecting whether the typical number of stations (either mean or median, depending on whether one-way ANOVA or Kruskal-Wallis is used) that detect the an earthquake varies based on its depth category. The depth original data has the actual depths; we'll convert these to depth categories.***
+
+```{r make-Depth-Categories}
+brks<-c(0,200,400,680)
+library(datasets) # this line is unnecessary, as the datasets package should be loaded, and is only included for the sake of completeness
+quakesDepthCats<-transform(quakes,depthCat=cut(depth,breaks=brks))
+```
+
+***The decision as to whether to use one-way ANOVA or Kruskal-Wallis hinges on whether the distributions of depths for each depth category are all approximately approximately normal.***
+
+```{r}
+with(quakesDepthCats,boxplot(stations~depthCat,main="Side-by-side boxplot of number of stations\n detecting the quake vs its depth category"))
+grpMeans<- with(quakesDepthCats,tapply(stations,depthCat,FUN=mean))
+points(seq_along(quakesDepthCats$depthCat%>%unique),grpMeans,pch=4,cex=1.5)
+
+
+grpResids<-quakesDepthCats$stations - grpMeans[as.numeric(quakesDepthCats$depthCat)]
+
+qqnorm(grpResids,main="NPP plot for quake depth")
+qqline(grpResids)
+```
+
+***From the side-by-side boxplots and the NPP plot, it's obvious that at the distribution of number of stations deviates from normality for at least one of the depth categories. (in fact, the side-by-side boxplot shows heavy right skew for each category's distribution). So we can't use ANOVA to compare across the depth categories the typical number of stations recording a quake for that depth category.***
+
+***So long as we can assume independence of number of stations recording a quake between quakes within a particular depth category, independence across the categories and constant variance across the categories, then it's safe to apply the Kruskal Wallis test on the median number of stations recording the quake in each depth category.***
+
+The two independence contains (within group and between groups) sound reasonable.
+
+The relative IQRs of the 3 categories in the side-by-side boxplots above, seem to validate the constant variance assumption.
+
+Let's verify that the ratio of the max group sample standard deviation to the min group sample standard deviation is less than 2.  
+```{r}
+grpsds<-with(quakesDepthCats,tapply(stations,depthCat,FUN=sd))
+max(grpsds)/min(grpsds)
+```
+
+So we're good to apply the Kruskal-Wallis test with the following hypotheses:  
+$H_0$: Median number of stations recording the earthquake are ALL the same for each depth category.  
+$H_A$ : Median number of stations recording the earthquake are NOT ALL the same for each depth category. i.e. at least one pair of depth categories differs on median number of stations recording the quake.  
+
+```{r}
+kruskal.test(stations~depthCat,data=quakesDepthCats)
+```
+So at $\alpha$= 0.05, we would reject the null hypothesis, but at $\alpha$= 0.01, we would fail to reject the null hypothesis. 
+
+
+### Multi-factor ANOVA 
+
+***Note: parts d-f use the Cars93 dataset in the MASS package to do two-way ANOVA on mean Length using AirBags and Man.trans.avail as grouping variables. The interaction between the grouping variables is also explored and tested.***
+
+First let's see if there are any missing values in any of the columns of cars93 that we need for this question.
+
+```{r}
+colsOfUse<-Cars93%>%select_(.dots= c('AirBags','Man.trans.avail','Length'))
+nrow(colsOfUse) - nrow(colsOfUse[complete.cases(colsOfUse),])
+```
+
+Since there are no missing values, we don't have to filter out any observations.
+
+We'd now like to determine the mean length (in inches) of cars by the variables AirBags and Man.trans.avail.
+
+To do this we could use tapply, but tapply will output a table.
+
+In order to do an interaction plot we need a data frame with 3 columns- the first 2 columns are the unique levels of the 2 grouping variables' pairings and the last column is the mean length
+
+```{r}
+tapply(Cars93$Length,INDEX = list(Cars93$AirBags,Cars93$Man.trans.avail),FUN=mean)
+```
+Fortunately, the aggregate function will use almost the same syntax as tapply (use "by=" instead of "INDEX="), but will return a dataframe in a format suitable for an interaction plot.
+
+```{r}
+cars93Means<-aggregate(Cars93$Length,by = list(Cars93$AirBags,Cars93$Man.trans.avail),FUN=mean)
+
+cars93Means
+```
+
+Now for the interaction plot. This plot should qualitatively indicate whether or not the specific level of the Man.trans.avail variable influences the relationship that between the level of the AirBags variable and the mean car length for that specific level of the AirBags variable.
+
+```{r}
+interaction.plot(x.factor=cars93Means[,1],trace.factor=cars93Means[,2],response=cars93Means$x,trace.label="has Automatic\n Transm.?",xlab="Airbags",ylab="Mean car length(in.)")
+```
+
+The "Yes" and "No" lines aren't parallel, so there seems to be some evidence for interaction between the two variables.
+
+Let's do a two-way Analysis of Variance that'll also test to see if there's a statistically significant level of interaction between the AirBags and Man.trans.avail variables with regard to interaction's effect on the Length response variable.
+
+```{r}
+twoWayANOVAWithInteraction<-aov(Length~AirBags+Man.trans.avail+AirBags:Man.trans.avail,data=Cars93)
+summary(twoWayANOVAWithInteraction)
+```
+***Ironically enough, the summary output shows an interaction p-value of 0.131, which is not statistically significant. So, although the interaction plot's non-parallel nature seems to indicate that there may be an interaction between  the AirBags and Man.trans.avail variables, the significance test indicates that whatever interaction may be present is not statistically significant. The main effects of the AirBags and Man.trans.avail on Length, are both separately statistically significant.***
+
+***The p-value for AirBags corresponds to the situation wherein the level of the Man.trans.avail variable is held fixed, and we're examining the effect of the level the of AirBags variable on Length. Similarly, the p-value for Man.trans.avail corresponds to the situation wherein the level of the AirBags variable is held fixed, and we're examining the effect of the level of the Man.trans.avail variable on Length. The p-value for AirBags:Man.trans.avail is the p-value for the interaction.***
